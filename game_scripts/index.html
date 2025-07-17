@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Koremz RPG - Adventure Begins</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #1a1a1a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Arial', sans-serif;
+        }
+        
+        #game-container {
+            border: 3px solid #444;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
+            background: #000;
+        }
+        
+        .game-info {
+            color: #fff;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        
+        .controls {
+            color: #ccc;
+            text-align: center;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+        
+        .controls span {
+            background: #333;
+            padding: 2px 6px;
+            border-radius: 3px;
+            margin: 0 2px;
+        }
+    </style>
+</head>
+<body>
+    <div>
+        <div class="game-info">
+            <h1>🎮 Koremz RPG Adventure</h1>
+        </div>
+        <div id="game-container"></div>
+        <div class="controls">
+            Use <span>W</span><span>A</span><span>S</span><span>D</span> keys to move Dimash around the world
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.70.0/dist/phaser.min.js"></script>
+    <script src="src/config/GameConfig.js"></script>
+    <script src="src/managers/AssetManager.js"></script>
+    <script src="src/managers/InputManager.js"></script>
+    <script src="src/entities/Player.js"></script>
+    <script src="src/entities/VillainIntro.js"></script>
+    <script src="src/entities/CompanionIntro.js"></script>
+    <script src="src/entities/TeleportCave.js"></script>
+    <script src="src/scenes/GameScene.js"></script>
+    <script src="src/scenes/BahreddinsHomeScene.js"></script>
+    <script src="src/Game.js"></script>
+</body>
+</html>

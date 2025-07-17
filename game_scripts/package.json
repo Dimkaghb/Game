@@ -1,0 +1,19 @@
+{
+  "name": "koremz-rpg-game",
+  "version": "1.0.0",
+  "description": "A web-based RPG game built with Phaser.js",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx http-server . -p 8080 -c-1",
+    "dev": "npx http-server . -p 8080 -c-1 -o"
+  },
+  "keywords": ["rpg", "game", "phaser", "javascript"],
+  "author": "Koremz Game Studio",
+  "license": "MIT",
+  "dependencies": {
+    "phaser": "^3.70.0"
+  },
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  }
+}

@@ -55,6 +55,14 @@ class GameConfig {
                 RIGHT: {
                     KEY: 'dimash_right',
                     PATH: 'assets/dimash_character_assets/dimash_right.png'
+                },
+                HITTING_FROM_RIGHT: {
+                    KEY: 'dimash_hitting_fromright',
+                    PATH: 'assets/dimash_character_assets/dimash_hitting_fromright.png'
+                },
+                HITTING_FROM_LEFT: {
+                    KEY: 'dimash_hitting_fromleft',
+                    PATH: 'assets/dimash_character_assets/dimash_hitting_fromleft.png'
                 }
             },
             VILLAIN: {
@@ -250,6 +258,85 @@ class GameConfig {
                     fill: true
                 }
             }
+        };
+    }
+    
+    static get CHOICE_SYSTEM() {
+        return {
+            QUESTION_TEXT: 'What to do next?',
+            CHOICES: {
+                ASK_BAHREDDIN: {
+                    TEXT: '1) What I need to do now?',
+                    RESPONSE: 'You should explore the different realities and help people there. Use the door or Back button to access the direction map.'
+                },
+                HIT_BAHREDDIN: {
+                    TEXT: '2) Hit Bahreddin',
+                    RESPONSE: 'TY cho sovsem prifigel'
+                }
+            },
+            // New mentor tutorial choices
+            MENTOR_CHOICES: {
+                BERNAR_MCDONALDS: {
+                    TEXT: '1) Will Bernar buy me McDonalds?',
+                    RESPONSE: 'Of course! Bernar is legendary for serving McDonalds to his soldiers. He will definitely help you!'
+                },
+                WHAT_TO_DO: {
+                    TEXT: '2) What\'s next?',
+                    RESPONSE: 'You need to defeat all the mentors to get to Arman\'s temple and beat Armansu. The path is dangerous, but you must succeed!'
+                }
+            },
+            QUESTION_STYLE: {
+                fontSize: '22px',
+                fontFamily: 'Arial',
+                fill: '#ffffff',
+                stroke: '#000000',
+                strokeThickness: 2,
+                align: 'center'
+            },
+            CHOICE_BUTTON_STYLE: {
+                fontSize: '18px',
+                fontFamily: 'Arial',
+                fill: '#ffffff',
+                backgroundColor: '#4ecdc4',
+                padding: { x: 15, y: 10 },
+                borderRadius: 5
+            },
+            HITTING_ANIMATION: {
+                DURATION: 800,
+                SHAKE_INTENSITY: 10,
+                FLASH_COLOR: 0xff0000,
+                FLASH_DURATION: 200
+            }
+        };
+    }
+    
+    static get MENTORS() {
+        return {
+            DIANA: {
+                NAME: 'Diana',
+                DESCRIPTION: 'Pretty girl at first look but can make violence with the attendance',
+                POWER: 'Attendance Violence',
+                PERSONALITY: 'Deceptively beautiful but dangerous'
+            },
+            ABAY: {
+                NAME: 'Abay',
+                DESCRIPTION: 'Tall and quiet, Bahreddin was his best friend a long ago before Abay betrayed him',
+                POWER: 'Very fast moving opponent cause it writes in Golang',
+                PERSONALITY: 'Former friend turned betrayer, swift as code'
+            },
+            BERNAR: {
+                NAME: 'Bernar',
+                DESCRIPTION: 'Legend warrior who once served 100 McDonalds for his soldiers in nFactorial Incubator',
+                POWER: 'His main power is his aura and Docker',
+                PERSONALITY: 'Legendary warrior with container mastery'
+            },
+            TUTORIAL_TEXT: [
+                'Listen carefully, Dimash. Armansu is secured by three powerful mentors...',
+                'Diana: Pretty girl at first look, but she can make violence with the attendance. Don\'t be fooled by her appearance!',
+                'Abay: Tall and quiet. He was my best friend long ago, before he betrayed me. He\'s very fast moving opponent because he writes in Golang.',
+                'Bernar: A legend warrior who once served 100 McDonalds for his soldiers in nFactorial Incubator. His main power is his aura and Docker.',
+                'These mentors guard the path to Arman\'s temple. You must be prepared for what lies ahead.'
+            ]
         };
     }
 }

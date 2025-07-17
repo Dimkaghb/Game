@@ -12,6 +12,7 @@ class BahreddinsHomeScene extends Phaser.Scene {
         this.background = null;
         this.isIntroActive = false;
         this.hasIntroStarted = false;
+        this.clickableIndicator = null;
         
         // Direction map overlay properties
         this.directionMapOverlay = null;
@@ -44,6 +45,9 @@ class BahreddinsHomeScene extends Phaser.Scene {
     create() {
         console.log('🏠 Creating Bahreddin\'s Home Scene...');
         
+        // Initialize scene state
+        this.initializeSceneState();
+        
         // Create background
         this.createBackground();
         
@@ -68,6 +72,35 @@ class BahreddinsHomeScene extends Phaser.Scene {
         });
         
         console.log('✅ Bahreddin\'s Home Scene created successfully!');
+    }
+    
+    /**
+     * Initialize scene state to prevent overlapping issues
+     */
+    initializeSceneState() {
+        // Clear any existing dialogue elements
+        this.activeDialogueOverlay = null;
+        this.activeDialogueText = null;
+        this.activeSkipHint = null;
+        this.skipHintTween = null;
+        this.dialogueTimer = null;
+        this.skipHandler = null;
+        this.dialogueSkipped = false;
+        
+        // Clear choice system elements
+        this.choiceContainer = null;
+        this.mentorChoiceContainer = null;
+        this.choiceButtons = [];
+        this.mentorChoiceButtons = [];
+        this.choiceOverlay = null;
+        this.mentorChoiceOverlay = null;
+        this.choiceKeyHandler = null;
+        this.mentorChoiceKeyHandler = null;
+        
+        // Clear tutorial state
+        this.currentTutorialIndex = 0;
+        
+        console.log('🔄 Scene state initialized');
     }
     
     /**
@@ -96,6 +129,49 @@ class BahreddinsHomeScene extends Phaser.Scene {
         
         this.bahreddin.setScale(GameConfig.COMPANION.SCALE);
         this.bahreddin.setDepth(10);
+        
+        // Make Bahreddin interactive
+        this.bahreddin.setInteractive({ useHandCursor: true });
+        
+        // Add click handler to show choice system
+        this.bahreddin.on('pointerdown', () => {
+            // Only allow interaction if intro is not active
+            if (!this.isIntroActive) {
+                console.log('🎯 Bahreddin clicked! Showing choice system...');
+                this.showChoiceSystem();
+            } else {
+                console.log('⏳ Cannot interact with Bahreddin during intro sequence');
+            }
+        });
+        
+        // Add hover effects
+        this.bahreddin.on('pointerover', () => {
+            if (!this.isIntroActive) {
+                // Slight glow effect on hover
+                this.bahreddin.setTint(0xffff99); // Light yellow tint
+                this.tweens.add({
+                    targets: this.bahreddin,
+                    scaleX: GameConfig.COMPANION.SCALE * 1.05,
+                    scaleY: GameConfig.COMPANION.SCALE * 1.05,
+                    duration: 150,
+                    ease: 'Power2'
+                });
+            }
+        });
+        
+        this.bahreddin.on('pointerout', () => {
+            if (!this.isIntroActive) {
+                // Remove glow effect
+                this.bahreddin.clearTint();
+                this.tweens.add({
+                    targets: this.bahreddin,
+                    scaleX: GameConfig.COMPANION.SCALE,
+                    scaleY: GameConfig.COMPANION.SCALE,
+                    duration: 150,
+                    ease: 'Power2'
+                });
+            }
+        });
         
         // Add subtle idle animation
         this.tweens.add({
@@ -301,8 +377,10 @@ class BahreddinsHomeScene extends Phaser.Scene {
                 // Player has arrived, show dialogue
                 this.showDialogue('Thank you, Bahreddin! It\'s good to be here.', () => {
                     this.showDialogue('Rest here as long as you need. This is a safe place.', () => {
+                        // Complete intro sequence and enable Bahreddin interaction
                         this.isIntroActive = false;
-                        console.log('✅ Intro sequence completed');
+                        console.log('✅ Intro sequence completed - Bahreddin is now clickable');
+                        this.showClickableIndicator();
                     });
                 });
             }
@@ -310,78 +388,563 @@ class BahreddinsHomeScene extends Phaser.Scene {
     }
     
     /**
-     * Show dialogue text
+     * Show clickable indicator above Bahreddin
      */
-    showDialogue(text, onComplete) {
-        // Create dialogue overlay
+    showClickableIndicator() {
+        // Create a pulsing "Click me!" indicator above Bahreddin
+        this.clickableIndicator = this.add.text(
+            this.bahreddin.x,
+            this.bahreddin.y - 80,
+            '💬 Click me!',
+            {
+                fontSize: '16px',
+                fill: '#ffff00',
+                stroke: '#000000',
+                strokeThickness: 2,
+                fontFamily: 'Arial'
+            }
+        );
+        this.clickableIndicator.setOrigin(0.5);
+        this.clickableIndicator.setDepth(15);
+        
+        // Add pulsing animation
+        this.tweens.add({
+            targets: this.clickableIndicator,
+            alpha: 0.3,
+            scaleX: 0.9,
+            scaleY: 0.9,
+            duration: 1000,
+            ease: 'Sine.easeInOut',
+            yoyo: true,
+            repeat: -1
+        });
+        
+        // Auto-hide indicator after 10 seconds
+        this.time.delayedCall(10000, () => {
+            if (this.clickableIndicator) {
+                this.clickableIndicator.destroy();
+                this.clickableIndicator = null;
+            }
+        });
+    }
+    
+    /**
+     * Hide clickable indicator when choice system is shown
+     */
+    hideClickableIndicator() {
+        if (this.clickableIndicator) {
+            this.clickableIndicator.destroy();
+            this.clickableIndicator = null;
+        }
+    }
+    
+    /**
+     * Show choice system after Bahreddin's quote
+     */
+    showChoiceSystem() {
+        console.log('🎮 Showing original choice system...');
+        
+        // Hide the clickable indicator
+        this.hideClickableIndicator();
+        
+        // Show original choices first
+        this.showOriginalChoiceSystem();
+    }
+    
+    /**
+     * Show mentor tutorial sequence
+     */
+    showMentorTutorial() {
+        console.log('📚 Starting mentor tutorial...');
+        
+        let currentDialogueIndex = 0;
+        const tutorialTexts = GameConfig.MENTORS.TUTORIAL_TEXT;
+        
+        const showNextDialogue = () => {
+            if (currentDialogueIndex < tutorialTexts.length) {
+                this.showDialogue(tutorialTexts[currentDialogueIndex], () => {
+                    currentDialogueIndex++;
+                    showNextDialogue();
+                });
+            } else {
+                // Tutorial complete, show mentor choices
+                console.log('✅ Mentor tutorial complete, showing mentor choices...');
+                this.showMentorChoiceSystem();
+            }
+        };
+        
+        showNextDialogue();
+    }
+    
+    /**
+     * Show mentor choice system
+     */
+    showMentorChoiceSystem() {
+        console.log('🎮 Showing mentor choice system...');
+        
+        // Create overlay
         const overlay = this.add.rectangle(
             GameConfig.GAME.WIDTH / 2,
-            GameConfig.GAME.HEIGHT - 100,
+            GameConfig.GAME.HEIGHT / 2,
             GameConfig.GAME.WIDTH - 100,
-            80,
+            300,
             0x000000,
-            0.8
+            0.9
         );
         overlay.setScrollFactor(0);
         overlay.setDepth(200);
         
+        // Create question text
+        const questionText = this.add.text(
+            GameConfig.GAME.WIDTH / 2,
+            GameConfig.GAME.HEIGHT / 2 - 80,
+            'What would you like to know?',
+            GameConfig.CHOICE_SYSTEM.QUESTION_STYLE
+        );
+        questionText.setOrigin(0.5);
+        questionText.setScrollFactor(0);
+        questionText.setDepth(201);
+        
+        // Create choice buttons
+        const choice1Button = this.add.text(
+            GameConfig.GAME.WIDTH / 2,
+            GameConfig.GAME.HEIGHT / 2 - 20,
+            GameConfig.CHOICE_SYSTEM.MENTOR_CHOICES.BERNAR_MCDONALDS.TEXT,
+            GameConfig.CHOICE_SYSTEM.CHOICE_BUTTON_STYLE
+        );
+        choice1Button.setOrigin(0.5);
+        choice1Button.setScrollFactor(0);
+        choice1Button.setDepth(201);
+        choice1Button.setInteractive({ useHandCursor: true });
+        
+        const choice2Button = this.add.text(
+            GameConfig.GAME.WIDTH / 2,
+            GameConfig.GAME.HEIGHT / 2 + 40,
+            GameConfig.CHOICE_SYSTEM.MENTOR_CHOICES.WHAT_TO_DO.TEXT,
+            GameConfig.CHOICE_SYSTEM.CHOICE_BUTTON_STYLE
+        );
+        choice2Button.setOrigin(0.5);
+        choice2Button.setScrollFactor(0);
+        choice2Button.setDepth(201);
+        choice2Button.setInteractive({ useHandCursor: true });
+        
+        // Add hover effects
+        this.addChoiceButtonHoverEffects(choice1Button);
+        this.addChoiceButtonHoverEffects(choice2Button);
+        
+        // Handle choice 1 - Bernar McDonalds
+        choice1Button.on('pointerdown', () => {
+            console.log('🍟 Player asked about Bernar and McDonalds');
+            this.cleanupChoiceSystem(overlay, questionText, choice1Button, choice2Button);
+            this.showDialogue(GameConfig.CHOICE_SYSTEM.MENTOR_CHOICES.BERNAR_MCDONALDS.RESPONSE, () => {
+                console.log('✅ Bernar choice completed - showing original choices');
+                this.showOriginalChoiceSystem();
+            });
+        });
+        
+        // Handle choice 2 - What to do
+        choice2Button.on('pointerdown', () => {
+            console.log('❓ Player asked what to do');
+            this.cleanupChoiceSystem(overlay, questionText, choice1Button, choice2Button);
+            this.showDialogue(GameConfig.CHOICE_SYSTEM.MENTOR_CHOICES.WHAT_TO_DO.RESPONSE, () => {
+                console.log('✅ What to do choice completed - Bahreddin is clickable again');
+                this.showClickableIndicator();
+            });
+        });
+        
+        // Add keyboard support for mentor choices
+        this.addMentorChoiceKeyboardSupport(overlay, questionText, choice1Button, choice2Button);
+    }
+    
+    /**
+     * Show original choice system (Ask Bahreddin / Hit Bahreddin)
+     */
+    showOriginalChoiceSystem() {
+        console.log('🎮 Showing original choice system...');
+        
+        // Create overlay
+        const overlay = this.add.rectangle(
+            GameConfig.GAME.WIDTH / 2,
+            GameConfig.GAME.HEIGHT / 2,
+            GameConfig.GAME.WIDTH - 100,
+            300,
+            0x000000,
+            0.9
+        );
+        overlay.setScrollFactor(0);
+        overlay.setDepth(200);
+        
+        // Create question text
+        const questionText = this.add.text(
+            GameConfig.GAME.WIDTH / 2,
+            GameConfig.GAME.HEIGHT / 2 - 80,
+            GameConfig.CHOICE_SYSTEM.QUESTION_TEXT,
+            GameConfig.CHOICE_SYSTEM.QUESTION_STYLE
+        );
+        questionText.setOrigin(0.5);
+        questionText.setScrollFactor(0);
+        questionText.setDepth(201);
+        
+        // Create choice buttons
+        const choice1Button = this.add.text(
+            GameConfig.GAME.WIDTH / 2,
+            GameConfig.GAME.HEIGHT / 2 - 20,
+            GameConfig.CHOICE_SYSTEM.CHOICES.ASK_BAHREDDIN.TEXT,
+            GameConfig.CHOICE_SYSTEM.CHOICE_BUTTON_STYLE
+        );
+        choice1Button.setOrigin(0.5);
+        choice1Button.setScrollFactor(0);
+        choice1Button.setDepth(201);
+        choice1Button.setInteractive({ useHandCursor: true });
+        
+        const choice2Button = this.add.text(
+            GameConfig.GAME.WIDTH / 2,
+            GameConfig.GAME.HEIGHT / 2 + 40,
+            GameConfig.CHOICE_SYSTEM.CHOICES.HIT_BAHREDDIN.TEXT,
+            GameConfig.CHOICE_SYSTEM.CHOICE_BUTTON_STYLE
+        );
+        choice2Button.setOrigin(0.5);
+        choice2Button.setScrollFactor(0);
+        choice2Button.setDepth(201);
+        choice2Button.setInteractive({ useHandCursor: true });
+        
+        // Add hover effects
+        this.addChoiceButtonHoverEffects(choice1Button);
+        this.addChoiceButtonHoverEffects(choice2Button);
+        
+        // Handle choice 1 - What I need to do now (triggers mentor tutorial)
+        choice1Button.on('pointerdown', () => {
+            console.log('❓ Player asked what they need to do - starting mentor tutorial');
+            this.cleanupChoiceSystem(overlay, questionText, choice1Button, choice2Button);
+            this.showMentorTutorial();
+        });
+        
+        // Handle choice 2 - Hit Bahreddin
+        choice2Button.on('pointerdown', () => {
+            console.log('👊 Player chose to hit Bahreddin');
+            this.cleanupChoiceSystem(overlay, questionText, choice1Button, choice2Button);
+            this.performHittingAction();
+        });
+        
+        // Add keyboard support
+        this.addChoiceKeyboardSupport(overlay, questionText, choice1Button, choice2Button);
+    }
+    
+    /**
+     * Add hover effects to choice buttons
+     */
+    addChoiceButtonHoverEffects(button) {
+        button.on('pointerover', () => {
+            button.setStyle({ backgroundColor: '#45b7aa' });
+            this.tweens.add({
+                targets: button,
+                scaleX: 1.05,
+                scaleY: 1.05,
+                duration: 100,
+                ease: 'Power2'
+            });
+        });
+        
+        button.on('pointerout', () => {
+            button.setStyle({ backgroundColor: '#4ecdc4' });
+            this.tweens.add({
+                targets: button,
+                scaleX: 1.0,
+                scaleY: 1.0,
+                duration: 100,
+                ease: 'Power2'
+            });
+        });
+    }
+    
+    /**
+     * Add keyboard support for choices
+     */
+    addChoiceKeyboardSupport(overlay, questionText, choice1Button, choice2Button) {
+        const keyHandler = (event) => {
+            if (event.key === '1') {
+                console.log('❓ Player asked what they need to do - starting mentor tutorial (keyboard)');
+                this.cleanupChoiceSystem(overlay, questionText, choice1Button, choice2Button);
+                this.input.keyboard.off('keydown', keyHandler);
+                this.showMentorTutorial();
+            } else if (event.key === '2' || event.key === 'Enter') {
+                console.log('👊 Player chose to hit Bahreddin (keyboard)');
+                this.cleanupChoiceSystem(overlay, questionText, choice1Button, choice2Button);
+                this.input.keyboard.off('keydown', keyHandler);
+                this.performHittingAction();
+            }
+        };
+        
+        this.input.keyboard.on('keydown', keyHandler);
+    }
+    
+    /**
+     * Add keyboard support for mentor choices
+     */
+    addMentorChoiceKeyboardSupport(overlay, questionText, choice1Button, choice2Button) {
+        const keyHandler = (event) => {
+            if (event.key === '1') {
+                console.log('🍟 Player asked about Bernar and McDonalds (keyboard)');
+                this.cleanupChoiceSystem(overlay, questionText, choice1Button, choice2Button);
+                this.input.keyboard.off('keydown', keyHandler);
+                this.showDialogue(GameConfig.CHOICE_SYSTEM.MENTOR_CHOICES.BERNAR_MCDONALDS.RESPONSE, () => {
+                    console.log('✅ Bernar choice completed - showing original choices');
+                    this.showOriginalChoiceSystem();
+                });
+            } else if (event.key === '2' || event.key === 'Enter') {
+                console.log('❓ Player asked what to do (keyboard)');
+                this.cleanupChoiceSystem(overlay, questionText, choice1Button, choice2Button);
+                this.input.keyboard.off('keydown', keyHandler);
+                this.showDialogue(GameConfig.CHOICE_SYSTEM.MENTOR_CHOICES.WHAT_TO_DO.RESPONSE, () => {
+                    console.log('✅ What to do choice completed - Bahreddin is clickable again');
+                    this.showClickableIndicator();
+                });
+            }
+        };
+        
+        this.input.keyboard.on('keydown', keyHandler);
+    }
+    
+    /**
+     * Clean up choice system elements
+     */
+    cleanupChoiceSystem(overlay, questionText, choice1Button, choice2Button) {
+        console.log('🧹 Cleaning up choice system...');
+        
+        // Clean up any active dialogue first
+        this.cleanupActiveDialogue();
+        
+        // Remove keyboard listeners
+        if (this.choiceKeyHandler) {
+            this.input.keyboard.off('keydown', this.choiceKeyHandler);
+            this.choiceKeyHandler = null;
+        }
+        
+        if (this.mentorChoiceKeyHandler) {
+            this.input.keyboard.off('keydown', this.mentorChoiceKeyHandler);
+            this.mentorChoiceKeyHandler = null;
+        }
+        
+        // Clean up passed elements (for backward compatibility)
+        if (overlay && overlay.destroy) overlay.destroy();
+        if (questionText && questionText.destroy) questionText.destroy();
+        if (choice1Button && choice1Button.destroy) choice1Button.destroy();
+        if (choice2Button && choice2Button.destroy) choice2Button.destroy();
+        
+        // Clean up choice containers
+        if (this.choiceContainer) {
+            this.choiceContainer.destroy();
+            this.choiceContainer = null;
+        }
+        
+        if (this.mentorChoiceContainer) {
+            this.mentorChoiceContainer.destroy();
+            this.mentorChoiceContainer = null;
+        }
+        
+        // Clean up individual choice elements
+        if (this.choiceButtons) {
+            this.choiceButtons.forEach(button => {
+                if (button && button.destroy) {
+                    button.destroy();
+                }
+            });
+            this.choiceButtons = [];
+        }
+        
+        if (this.mentorChoiceButtons) {
+            this.mentorChoiceButtons.forEach(button => {
+                if (button && button.destroy) {
+                    button.destroy();
+                }
+            });
+            this.mentorChoiceButtons = [];
+        }
+        
+        // Clean up choice overlays
+        if (this.choiceOverlay) {
+            this.choiceOverlay.destroy();
+            this.choiceOverlay = null;
+        }
+        
+        if (this.mentorChoiceOverlay) {
+            this.mentorChoiceOverlay.destroy();
+            this.mentorChoiceOverlay = null;
+        }
+        
+        console.log('✅ Choice system cleanup complete');
+    }
+    
+    /**
+     * Perform hitting action with animation
+     */
+    performHittingAction() {
+        console.log('💥 Performing hitting action...');
+        
+        // Determine which hitting sprite to use based on player position relative to Bahreddin
+        const playerX = this.player.getSprite().x;
+        const bahreddinX = this.bahreddin.x;
+        const isPlayerOnRight = playerX > bahreddinX;
+        
+        // Get the appropriate hitting sprite
+        const hittingKey = isPlayerOnRight ? 
+            GameConfig.ASSETS.PLAYER.HITTING_FROM_RIGHT.KEY : 
+            GameConfig.ASSETS.PLAYER.HITTING_FROM_LEFT.KEY;
+        
+        // Create hitting sprite
+        const hittingSprite = this.add.sprite(
+            this.player.getSprite().x,
+            this.player.getSprite().y,
+            hittingKey
+        );
+        hittingSprite.setScale(GameConfig.PLAYER.SCALE);
+        hittingSprite.setDepth(15);
+        
+        // Hide original player sprite temporarily
+        this.player.getSprite().setVisible(false);
+        
+        // Animate hitting action
+        this.tweens.add({
+            targets: hittingSprite,
+            x: isPlayerOnRight ? bahreddinX + 30 : bahreddinX - 30,
+            duration: GameConfig.CHOICE_SYSTEM.HITTING_ANIMATION.DURATION / 2,
+            ease: 'Power2',
+            onComplete: () => {
+                // Flash effect on Bahreddin
+                this.createHitFlashEffect();
+                
+                // Shake Bahreddin
+                this.tweens.add({
+                    targets: this.bahreddin,
+                    x: bahreddinX + GameConfig.CHOICE_SYSTEM.HITTING_ANIMATION.SHAKE_INTENSITY,
+                    duration: 50,
+                    ease: 'Power2',
+                    yoyo: true,
+                    repeat: 3,
+                    onComplete: () => {
+                        // Return hitting sprite to original position
+                        this.tweens.add({
+                            targets: hittingSprite,
+                            x: this.player.getSprite().x,
+                            duration: GameConfig.CHOICE_SYSTEM.HITTING_ANIMATION.DURATION / 2,
+                            ease: 'Power2',
+                            onComplete: () => {
+                                // Clean up hitting sprite and show original player
+                                hittingSprite.destroy();
+                                this.player.getSprite().setVisible(true);
+                                
+                                // Show Bahreddin's response
+                                this.showDialogue(GameConfig.CHOICE_SYSTEM.CHOICES.HIT_BAHREDDIN.RESPONSE, () => {
+                                    console.log('✅ Choice completed - Bahreddin is clickable again');
+                                    this.showClickableIndicator();
+                                });
+                            }
+                        });
+                    }
+                });
+            }
+        });
+    }
+    
+    /**
+     * Create flash effect when hitting
+     */
+    createHitFlashEffect() {
+        const flash = this.add.rectangle(
+            GameConfig.GAME.WIDTH / 2,
+            GameConfig.GAME.HEIGHT / 2,
+            GameConfig.GAME.WIDTH,
+            GameConfig.GAME.HEIGHT,
+            GameConfig.CHOICE_SYSTEM.HITTING_ANIMATION.FLASH_COLOR,
+            0.3
+        );
+        flash.setScrollFactor(0);
+        flash.setDepth(100);
+        
+        this.tweens.add({
+            targets: flash,
+            alpha: 0,
+            duration: GameConfig.CHOICE_SYSTEM.HITTING_ANIMATION.FLASH_DURATION,
+            ease: 'Power2',
+            onComplete: () => {
+                flash.destroy();
+            }
+        });
+    }
+
+    /**
+     * Show dialogue text with improved management
+     */
+    showDialogue(text, onComplete) {
+        // Clean up any existing dialogue first
+        this.cleanupActiveDialogue();
+        
+        console.log('💬 Showing dialogue:', text.substring(0, 50) + '...');
+        
+        // Create dialogue overlay
+        this.activeDialogueOverlay = this.add.rectangle(
+            GameConfig.GAME.WIDTH / 2,
+            GameConfig.GAME.HEIGHT - 100,
+            GameConfig.GAME.WIDTH - 100,
+            100, // Increased height for better text display
+            0x000000,
+            0.9 // Increased opacity for better readability
+        );
+        this.activeDialogueOverlay.setScrollFactor(0);
+        this.activeDialogueOverlay.setDepth(300); // Higher depth to ensure it's on top
+        
         // Create dialogue text
-        const dialogueText = this.add.text(
+        this.activeDialogueText = this.add.text(
             GameConfig.GAME.WIDTH / 2,
             GameConfig.GAME.HEIGHT - 100,
             text,
             {
-                fontSize: '20px',
+                fontSize: '18px',
                 fill: '#ffffff',
                 fontFamily: 'Arial',
                 align: 'center',
-                wordWrap: { width: GameConfig.GAME.WIDTH - 150 }
+                wordWrap: { width: GameConfig.GAME.WIDTH - 150 },
+                lineSpacing: 5
             }
         );
-        dialogueText.setOrigin(0.5);
-        dialogueText.setScrollFactor(0);
-        dialogueText.setDepth(201);
+        this.activeDialogueText.setOrigin(0.5);
+        this.activeDialogueText.setScrollFactor(0);
+        this.activeDialogueText.setDepth(301);
         
         // Add skip hint
-        const skipHint = this.add.text(
+        this.activeSkipHint = this.add.text(
             GameConfig.GAME.WIDTH - 20,
             GameConfig.GAME.HEIGHT - 20,
-            'Click to skip →',
+            'Click to continue →',
             {
                 fontSize: '14px',
                 fill: '#ffff99',
                 fontFamily: 'Arial'
             }
         );
-        skipHint.setOrigin(1, 1);
-        skipHint.setScrollFactor(0);
-        skipHint.setDepth(202);
-        skipHint.setAlpha(0.7);
+        this.activeSkipHint.setOrigin(1, 1);
+        this.activeSkipHint.setScrollFactor(0);
+        this.activeSkipHint.setDepth(302);
+        this.activeSkipHint.setAlpha(0.8);
         
         // Pulse animation for skip hint
-        this.tweens.add({
-            targets: skipHint,
-            alpha: 0.3,
-            duration: 800,
+        this.skipHintTween = this.tweens.add({
+            targets: this.activeSkipHint,
+            alpha: 0.4,
+            duration: 1000,
             ease: 'Sine.easeInOut',
             yoyo: true,
             repeat: -1
         });
         
         // Click to skip functionality
-        let dialogueSkipped = false;
-        const skipHandler = () => {
-            if (!dialogueSkipped) {
-                dialogueSkipped = true;
-                console.log('⏭️ Skipping dialogue...');
+        this.dialogueSkipped = false;
+        this.skipHandler = () => {
+            if (!this.dialogueSkipped) {
+                this.dialogueSkipped = true;
+                console.log('⏭️ Continuing dialogue...');
                 
-                // Remove click listener
-                this.input.off('pointerdown', skipHandler);
-                
-                // Clean up immediately
-                overlay.destroy();
-                dialogueText.destroy();
-                skipHint.destroy();
+                this.cleanupActiveDialogue();
                 
                 if (onComplete) {
                     onComplete();
@@ -390,25 +953,60 @@ class BahreddinsHomeScene extends Phaser.Scene {
         };
         
         // Add click listener
-        this.input.on('pointerdown', skipHandler);
+        this.input.on('pointerdown', this.skipHandler);
         
-        // Auto-remove dialogue after 2.5 seconds (reduced from 4)
-        this.time.delayedCall(2500, () => {
-            if (!dialogueSkipped) {
-                dialogueSkipped = true;
-                
-                // Remove click listener
-                this.input.off('pointerdown', skipHandler);
-                
-                overlay.destroy();
-                dialogueText.destroy();
-                skipHint.destroy();
+        // Auto-remove dialogue after 3 seconds
+        this.dialogueTimer = this.time.delayedCall(3000, () => {
+            if (!this.dialogueSkipped) {
+                this.dialogueSkipped = true;
+                this.cleanupActiveDialogue();
                 
                 if (onComplete) {
                     onComplete();
                 }
             }
         });
+    }
+    
+    /**
+     * Clean up active dialogue elements
+     */
+    cleanupActiveDialogue() {
+        // Remove click listener
+        if (this.skipHandler) {
+            this.input.off('pointerdown', this.skipHandler);
+            this.skipHandler = null;
+        }
+        
+        // Clear timer
+        if (this.dialogueTimer) {
+            this.dialogueTimer.destroy();
+            this.dialogueTimer = null;
+        }
+        
+        // Stop tween
+        if (this.skipHintTween) {
+            this.skipHintTween.destroy();
+            this.skipHintTween = null;
+        }
+        
+        // Destroy dialogue elements
+        if (this.activeDialogueOverlay) {
+            this.activeDialogueOverlay.destroy();
+            this.activeDialogueOverlay = null;
+        }
+        
+        if (this.activeDialogueText) {
+            this.activeDialogueText.destroy();
+            this.activeDialogueText = null;
+        }
+        
+        if (this.activeSkipHint) {
+            this.activeSkipHint.destroy();
+            this.activeSkipHint = null;
+        }
+        
+        this.dialogueSkipped = false;
     }
     
     /**

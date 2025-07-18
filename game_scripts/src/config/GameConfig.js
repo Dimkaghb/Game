@@ -94,6 +94,40 @@ class GameConfig {
                     KEY: 'direction_map',
                     PATH: 'assets/map/direction_map.png'
                 }
+            },
+            BERNAR: {
+                MAP: {
+                    KEY: 'bernar_map',
+                    PATH: 'assets/map/bernar_map.png'
+                },
+                SNAKE_HEAD: {
+                    KEY: 'snake_head_bernar',
+                    PATH: 'assets/bernar_assets/snake_head_bernar.png'
+                },
+                SNAKE_BODY: {
+                    KEY: 'snake_body',
+                    PATH: 'assets/bernar_assets/snake_body.png'
+                },
+                BERNAR1: {
+                    KEY: 'bernar1',
+                    PATH: 'assets/bernar_assets/bernar1.png'
+                },
+                BERNAR_LAUGH: {
+                    KEY: 'bernar_laugh',
+                    PATH: 'assets/bernar_assets/bernar_laugh.png'
+                },
+                BERNAR_LAUGH2: {
+                    KEY: 'bernar_laugh2',
+                    PATH: 'assets/bernar_assets/bernar_laugh2.png'
+                },
+                DOCKER: {
+                    KEY: 'docker',
+                    PATH: 'assets/gaming_items/docker.png'
+                },
+                BURGER: {
+                    KEY: 'burger',
+                    PATH: 'assets/gaming_items/burger.png'
+                }
             }
         };
     }
@@ -344,6 +378,68 @@ class GameConfig {
                 'Bernar: A legend warrior who once served 100 McDonalds for his soldiers in nFactorial Incubator. His main power is his aura and Docker.',
                 'These mentors guard the path to Arman\'s temple. You must be prepared for what lies ahead.'
             ]
+        };
+    }
+
+    static get BERNAR_SNAKE_GAME() {
+        return {
+            GRID_SIZE: 48, // Increased from 32 to make snake bigger
+            INITIAL_SPEED: 350, // milliseconds between moves (slower)
+            SPEED_INCREASE: 10, // speed increase per apple
+            APPLES_TO_WIN: 15,
+            BERNAR_CELEBRATION_AT: 10, // Show Bernar celebration at 10 apples
+            SNAKE_INITIAL_LENGTH: 3,
+            GAME_AREA: {
+                X: 120,
+                Y: 120,
+                WIDTH: 784, // Adjusted for bigger grid
+                HEIGHT: 528 // Adjusted for bigger grid
+            },
+            BACKGROUND: {
+                OVERLAY_ALPHA: 0.85, // Less transparent, more brick-like
+                OVERLAY_COLOR: 0x8B4513, // Brown brick color
+                BORDER_COLOR: 0x654321, // Darker brown for border
+                BORDER_WIDTH: 6,
+                // Grid lines for easier navigation
+                GRID_LINES: {
+                    ENABLED: true,
+                    COLOR: 0x654321,
+                    ALPHA: 0.3,
+                    WIDTH: 1
+                }
+            },
+            CELEBRATION: {
+                LAUGH_DURATION: 3000, // 3 seconds
+                FOUNTAIN_DURATION: 2000, // 2 seconds
+                BURGER_COUNT: 20,
+                FOUNTAIN_SPEED: 300,
+                BERNAR_MESSAGE: "Thank you Dimash, get your mack Doncald!"
+            },
+            UI: {
+                SCORE_STYLE: {
+                    fontSize: '24px',
+                    fontFamily: 'Arial',
+                    fill: '#ffffff',
+                    stroke: '#000000',
+                    strokeThickness: 2
+                },
+                WIN_MESSAGE_STYLE: {
+                    fontSize: '32px',
+                    fontFamily: 'Arial',
+                    fill: '#ffff00',
+                    stroke: '#000000',
+                    strokeThickness: 3,
+                    align: 'center'
+                },
+                BERNAR_MESSAGE_STYLE: {
+                    fontSize: '28px',
+                    fontFamily: 'Arial',
+                    fill: '#ff6b6b',
+                    stroke: '#000000',
+                    strokeThickness: 2,
+                    align: 'center'
+                }
+            }
         };
     }
 }

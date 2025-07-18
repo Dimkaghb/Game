@@ -1341,6 +1341,18 @@ class BahreddinsHomeScene extends Phaser.Scene {
             return;
         }
         
+        // Check if this is Bernar - navigate to Bernar scene
+        if (reality.NAME === 'Bernar') {
+            console.log('🐍 Navigating to Bernar Scene...');
+            
+            // Save game state before transition
+            const gameStateManager = new GameStateManager();
+            gameStateManager.setCurrentScene('BernarScene');
+            
+            this.scene.start('BernarScene');
+            return;
+        }
+        
         // Hide any existing description
         this.hideRealityDescription();
         

@@ -44,6 +44,9 @@ class BernarScene extends Phaser.Scene {
         this.moveTimer = null;
         this.celebrationTimer = null;
         
+        // Input handlers
+        this.keyboardHandler = null; // Store reference for cleanup
+        
         // Game state manager
         this.gameStateManager = new GameStateManager();
     }
@@ -368,8 +371,8 @@ class BernarScene extends Phaser.Scene {
         // Create WASD keys
         this.wasd = this.input.keyboard.addKeys('W,S,A,D');
         
-        // Handle input
-        this.input.keyboard.on('keydown', (event) => {
+        // Create a named handler for the keyboard events so we can remove it later
+        this.keyboardHandler = (event) => {
             // Don't allow controls during lore introduction
             if (this.loreIntroActive || this.gameOver || this.celebrationActive) return;
             
@@ -399,7 +402,10 @@ class BernarScene extends Phaser.Scene {
                     }
                     break;
             }
-        });
+        };
+        
+        // Handle input
+        this.input.keyboard.on('keydown', this.keyboardHandler);
     }
     
     startGameLoop() {
@@ -989,6 +995,14 @@ class BernarScene extends Phaser.Scene {
         this.gameOver = true;
         this.celebrationActive = true;
         
+        // Mark scene as completed in game state
+        this.gameStateManager.markSceneCompleted('BernarScene');
+        console.log('✅ Bernar Scene: Marked as completed in game state');
+        
+        // Check and unlock achievement
+        const achievementManager = new AchievementManager();
+        this.unlockedAchievement = achievementManager.checkSceneCompletion('BernarScene');
+        
         // Stop game timer
         if (this.moveTimer) {
             this.moveTimer.destroy();
@@ -1155,12 +1169,24 @@ class BernarScene extends Phaser.Scene {
     }
     
     endCelebration() {
+        // Create base completion message
+        let winMessage = 'Bernar is Human Again!\nMission Complete!';
+        
+        // Add achievement message if unlocked
+        if (this.unlockedAchievement) {
+            winMessage += `\n\n🏆 Achievement Unlocked: ${this.unlockedAchievement.icon} ${this.unlockedAchievement.name}\n💰 +${this.unlockedAchievement.coinReward} coins earned!`;
+        }
+        
         // Show completion message
         const winText = this.add.text(
             GameConfig.GAME.WIDTH / 2,
             GameConfig.GAME.HEIGHT / 2 - 100,
-            'Bernar is Human Again!\nMission Complete!',
-            GameConfig.BERNAR_SNAKE_GAME.UI.WIN_MESSAGE_STYLE
+            winMessage,
+            {
+                ...GameConfig.BERNAR_SNAKE_GAME.UI.WIN_MESSAGE_STYLE,
+                fontSize: '20px',
+                wordWrap: { width: 600 }
+            }
         );
         
         winText.setOrigin(0.5);
@@ -1174,8 +1200,9 @@ class BernarScene extends Phaser.Scene {
             ease: 'Back.easeOut'
         });
         
-        // Auto return to map after celebration
-        this.time.delayedCall(3000, () => {
+        // Auto return to map after celebration (longer delay if achievement unlocked)
+        const delay = this.unlockedAchievement ? 5000 : 3000;
+        this.time.delayedCall(delay, () => {
             this.goBackToMap();
         });
     }
@@ -1249,6 +1276,12 @@ class BernarScene extends Phaser.Scene {
     cleanup() {
         console.log('🧹 Cleaning up Bernar Snake Game...');
         
+        // Clean up keyboard event listeners
+        if (this.keyboardHandler) {
+            this.input.keyboard.off('keydown', this.keyboardHandler);
+            this.keyboardHandler = null;
+        }
+        
         // Stop all timers
         if (this.moveTimer) {
             this.moveTimer.destroy();
@@ -1295,5 +1328,14 @@ class BernarScene extends Phaser.Scene {
     
     update() {
         // Game loop is handled by timer, no need for continuous updates
+    }
+    
+    shutdown() {
+        console.log('🧹 Shutting down Bernar Scene...');
+        
+        // Clean up all resources
+        this.cleanup();
+        
+        console.log('✅ Bernar Scene shutdown complete');
     }
 }

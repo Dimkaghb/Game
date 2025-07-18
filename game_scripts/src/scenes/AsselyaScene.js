@@ -516,11 +516,20 @@ class AsselyaScene extends Phaser.Scene {
         this.gameOver = true;
         this.gameStarted = false;
         
+        // Mark scene as completed in game state
+        const gameStateManager = new GameStateManager();
+        gameStateManager.markSceneCompleted('AsselyaScene');
+        console.log('✅ Asselya Scene: Marked as completed in game state');
+        
+        // Check and unlock achievement
+        const achievementManager = new AchievementManager();
+        const unlockedAchievement = achievementManager.checkSceneCompletion('AsselyaScene');
+        
         // Stop all timers
         this.stopAllTimers();
         
-        // Show win message from Asselya
-        this.showWinMessage();
+        // Show win message from Asselya with achievement info
+        this.showWinMessage(unlockedAchievement);
     }
 
     loseGame() {
@@ -535,18 +544,26 @@ class AsselyaScene extends Phaser.Scene {
         this.showLoseMessage();
     }
 
-    showWinMessage() {
+    showWinMessage(unlockedAchievement = null) {
         // Make Asselya more prominent
         this.asselya.setAlpha(1.0);
         this.asselya.setScale(3.0);
+        
+        // Create base congratulations message
+        let winMessage = 'Congratulations! You lasted 30 seconds!\nAsselya is proud of your social media dedication!';
+        
+        // Add achievement message if unlocked
+        if (unlockedAchievement) {
+            winMessage += `\n\n🏆 Achievement Unlocked: ${unlockedAchievement.icon} ${unlockedAchievement.name}\n💰 +${unlockedAchievement.coinReward} coins earned!`;
+        }
         
         // Create congratulations text
         this.gameOverText = this.add.text(
             this.cameras.main.width / 2,
             this.cameras.main.height / 2 + 200,
-            'Congratulations! You lasted 30 seconds!\nAsselya is proud of your social media dedication!',
+            winMessage,
             {
-                fontSize: '28px',
+                fontSize: '24px',
                 fill: '#44ff44',
                 fontFamily: 'Arial',
                 align: 'center',

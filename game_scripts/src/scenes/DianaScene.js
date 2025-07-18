@@ -766,6 +766,15 @@ class DianaScene extends Phaser.Scene {
         this.gameWon = true;
         this.gameStarted = false;
         
+        // Mark scene as completed in game state
+        const gameStateManager = new GameStateManager();
+        gameStateManager.markSceneCompleted('DianaScene');
+        console.log('✅ Diana Scene: Marked as completed in game state');
+        
+        // Check and unlock achievement
+        const achievementManager = new AchievementManager();
+        const unlockedAchievement = achievementManager.checkSceneCompletion('DianaScene');
+        
         // Stop Diana timer
         if (this.dianaTimer) {
             this.dianaTimer.destroy();
@@ -778,11 +787,11 @@ class DianaScene extends Phaser.Scene {
         this.diana.setDepth(200); // Increased depth to ensure she's in front
         this.diana.setScrollFactor(0);
         
-        // Show victory dialogue
-        this.showVictoryDialogue();
+        // Show victory dialogue with achievement info
+        this.showVictoryDialogue(unlockedAchievement);
     }
     
-    showVictoryDialogue() {
+    showVictoryDialogue(unlockedAchievement = null) {
         // Create dialogue overlay
         this.dialogueOverlay = this.add.rectangle(
             this.cameras.main.centerX,
@@ -795,13 +804,21 @@ class DianaScene extends Phaser.Scene {
         this.dialogueOverlay.setScrollFactor(0);
         this.dialogueOverlay.setDepth(100);
         
+        // Create base dialogue text
+        let dialogueMessage = "Diana: Impressive! You've collected all the coins and survived my attendance checks. You may pass!";
+        
+        // Add achievement message if unlocked
+        if (unlockedAchievement) {
+            dialogueMessage += `\n\n🏆 Achievement Unlocked: ${unlockedAchievement.icon} ${unlockedAchievement.name}\n💰 +${unlockedAchievement.coinReward} coins earned!`;
+        }
+        
         // Create dialogue text
         this.dialogueText = this.add.text(
             this.cameras.main.centerX,
             this.cameras.main.height - 100,
-            "Diana: Impressive! You've collected all the coins and survived my attendance checks. You may pass!",
+            dialogueMessage,
             {
-                fontSize: '20px',
+                fontSize: '18px',
                 fontFamily: 'Arial',
                 fill: '#ffffff',
                 align: 'center',
@@ -812,8 +829,9 @@ class DianaScene extends Phaser.Scene {
         this.dialogueText.setScrollFactor(0);
         this.dialogueText.setDepth(101);
         
-        // Show continue button after 2 seconds
-        this.time.delayedCall(2000, () => {
+        // Show continue button after 3 seconds (longer if achievement unlocked)
+        const delay = unlockedAchievement ? 4000 : 2000;
+        this.time.delayedCall(delay, () => {
             this.showContinueButton();
         });
     }

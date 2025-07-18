@@ -88,11 +88,19 @@ class AssetManager {
         const map = this.scene.add.image(0, 0, GameConfig.ASSETS.MAP.BACKGROUND.KEY);
         map.setOrigin(0, 0);
         
-        // Scale map to fit screen if needed
+        // Scale map to fit screen properly without infinite scaling
         const scaleX = GameConfig.GAME.WIDTH / map.width;
         const scaleY = GameConfig.GAME.HEIGHT / map.height;
-        const scale = Math.max(scaleX, scaleY);
-        map.setScale(scale);
+        
+        // Use minimum scale to ensure the entire map fits within the screen
+        // and prevent infinite scaling issues
+        const scale = Math.min(scaleX, scaleY);
+        
+        // Ensure scale doesn't go below a reasonable minimum or above maximum
+        const finalScale = Math.max(0.5, Math.min(scale, 2.0));
+        map.setScale(finalScale);
+        
+        console.log(`🗺️ Background scaled: ${finalScale} (original: ${map.width}x${map.height}, target: ${GameConfig.GAME.WIDTH}x${GameConfig.GAME.HEIGHT})`);
         
         return map;
     }

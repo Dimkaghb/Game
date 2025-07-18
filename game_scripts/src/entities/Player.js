@@ -47,12 +47,26 @@ class Player {
         directions.forEach(direction => {
             const assetKey = GameConfig.ASSETS.PLAYER[direction.toUpperCase()].KEY;
             
+            // Check if the texture exists before creating animation
+            if (!this.scene.textures.exists(assetKey)) {
+                console.warn(`⚠️ Texture '${assetKey}' not found, skipping animation creation for direction '${direction}'`);
+                return;
+            }
+            
+            // Check if animation already exists to prevent duplicates
+            if (anims.exists(`dimash_${direction}`)) {
+                console.log(`🎬 Animation 'dimash_${direction}' already exists, skipping creation`);
+                return;
+            }
+            
             anims.create({
                 key: `dimash_${direction}`,
                 frames: [{ key: assetKey }],
                 frameRate: GameConfig.ANIMATIONS.FRAME_RATE,
                 repeat: direction === 'stay' ? 0 : GameConfig.ANIMATIONS.REPEAT
             });
+            
+            console.log(`✅ Created animation: dimash_${direction} with texture: ${assetKey}`);
         });
     }
     
@@ -81,16 +95,23 @@ class Player {
      * Update character animation based on movement
      */
     updateAnimation(isMoving, direction) {
+        const anims = this.scene.anims;
+        
         if (!isMoving) {
             // Play idle animation
-            if (this.currentDirection !== 'stay') {
+            if (this.currentDirection !== 'stay' && anims.exists('dimash_stay')) {
                 this.sprite.anims.play('dimash_stay', true);
                 this.currentDirection = 'stay';
             }
         } else if (direction && direction !== this.currentDirection) {
             // Play movement animation for the new direction
-            this.sprite.anims.play(`dimash_${direction}`, true);
-            this.currentDirection = direction;
+            const animKey = `dimash_${direction}`;
+            if (anims.exists(animKey)) {
+                this.sprite.anims.play(animKey, true);
+                this.currentDirection = direction;
+            } else {
+                console.warn(`⚠️ Animation '${animKey}' not found, keeping current animation`);
+            }
         }
     }
     

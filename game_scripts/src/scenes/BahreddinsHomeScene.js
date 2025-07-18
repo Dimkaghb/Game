@@ -37,6 +37,12 @@ class BahreddinsHomeScene extends Phaser.Scene {
             GameConfig.ASSETS.MAP.BAHREDDINS_HOME.KEY,
             GameConfig.ASSETS.MAP.BAHREDDINS_HOME.PATH
         );
+        
+        // Load medal images for achievement display
+        this.load.image('medal_docker', 'assets/gaming_items/docker.png');
+        this.load.image('medal_insta', 'assets/gaming_items/insta.png');
+        this.load.image('medal_coin', 'assets/gaming_items/coin.png');
+        this.load.image('medal_heart', 'assets/gaming_items/heart.png');
     }
     
     /**
@@ -60,15 +66,46 @@ class BahreddinsHomeScene extends Phaser.Scene {
         // Create player (Dimash) off-screen to the right
         this.createPlayer();
         
+        // Create door (always available)
+        this.createDoor();
+        
         // Setup camera
         this.setupCamera();
         
         // Create UI
         this.createUI();
         
-        // Start the intro sequence after a short delay
-        this.time.delayedCall(1000, () => {
-            this.startIntroSequence();
+        // Check if this is a return from another scene
+        const gameStateManager = new GameStateManager();
+        const currentState = gameStateManager.loadGameState();
+        
+        // Check if player has completed any scene, skip intro if so
+        const hasCompletedAnyScene = gameStateManager.isSceneCompleted('DianaScene') || 
+                                   gameStateManager.isSceneCompleted('BernarScene') || 
+                                   gameStateManager.isSceneCompleted('AsselyaScene');
+        
+        if (hasCompletedAnyScene) {
+            console.log('🎓 Scene completed - skipping intro');
+            this.isIntroActive = false;
+            this.hasIntroStarted = true;
+            
+            // Position player in the scene immediately
+            this.player.getSprite().setPosition(
+                GameConfig.GAME.WIDTH / 2 + 150,
+                GameConfig.GAME.HEIGHT / 2 + 50
+            );
+            
+            this.showClickableIndicator();
+        } else {
+            // Start the intro sequence after a short delay
+            this.time.delayedCall(1000, () => {
+                this.startIntroSequence();
+            });
+        }
+        
+        // Check for Armansu message after a short delay
+        this.time.delayedCall(2000, () => {
+            this.checkForArmansusMessage();
         });
         
         console.log('✅ Bahreddin\'s Home Scene created successfully!');
@@ -99,6 +136,19 @@ class BahreddinsHomeScene extends Phaser.Scene {
         
         // Clear tutorial state
         this.currentTutorialIndex = 0;
+        
+        // Reset direction map state
+        this.isDirectionMapActive = false;
+        this.directionMapOverlay = null;
+        this.directionMapSprite = null;
+        this.leaveButton = null;
+        this.leaveButtonText = null;
+        this.realityButtons = [];
+        this.realityDescriptionBox = null;
+        
+        // Initialize medal display elements
+        this.medalDisplayElements = [];
+        this.medalTooltip = null;
         
         console.log('🔄 Scene state initialized');
     }
@@ -135,18 +185,18 @@ class BahreddinsHomeScene extends Phaser.Scene {
         
         // Add click handler to show choice system
         this.bahreddin.on('pointerdown', () => {
-            // Only allow interaction if intro is not active
-            if (!this.isIntroActive) {
+            // Only allow interaction if intro is not active and direction map is not active
+            if (!this.isIntroActive && !this.isDirectionMapActive) {
                 console.log('🎯 Bahreddin clicked! Showing choice system...');
                 this.showChoiceSystem();
             } else {
-                console.log('⏳ Cannot interact with Bahreddin during intro sequence');
+                console.log('⏳ Cannot interact with Bahreddin during intro sequence or when direction map is active');
             }
         });
         
         // Add hover effects
         this.bahreddin.on('pointerover', () => {
-            if (!this.isIntroActive) {
+            if (!this.isIntroActive && !this.isDirectionMapActive) {
                 // Slight glow effect on hover
                 this.bahreddin.setTint(0xffff99); // Light yellow tint
                 this.tweens.add({
@@ -160,7 +210,7 @@ class BahreddinsHomeScene extends Phaser.Scene {
         });
         
         this.bahreddin.on('pointerout', () => {
-            if (!this.isIntroActive) {
+            if (!this.isIntroActive && !this.isDirectionMapActive) {
                 // Remove glow effect
                 this.bahreddin.clearTint();
                 this.tweens.add({
@@ -216,7 +266,7 @@ class BahreddinsHomeScene extends Phaser.Scene {
     }
     
     /**
-     * Create UI elements
+     * Create UI elements including medal display
      */
     createUI() {
         // Scene title
@@ -233,6 +283,12 @@ class BahreddinsHomeScene extends Phaser.Scene {
         
         // Door to direction map
         this.createDoor();
+        
+        // Medal display
+        this.createMedalDisplay();
+        
+        // Store medal display elements for cleanup
+        this.medalDisplayElements = [];
     }
     
     /**
@@ -341,6 +397,159 @@ class BahreddinsHomeScene extends Phaser.Scene {
         });
     }
     
+    /**
+     * Create medal display showing earned achievements
+     */
+    createMedalDisplay() {
+        // Clean up existing medal display
+        this.cleanupMedalDisplay();
+        
+        const achievementManager = new AchievementManager();
+        const earnedMedals = achievementManager.getEarnedMedals();
+        
+        // Medal display title
+        const medalTitle = this.add.text(
+            50,
+            GameConfig.GAME.HEIGHT - 150,
+            'Earned Medals:',
+            {
+                fontSize: '18px',
+                fill: '#ffffff',
+                stroke: '#000000',
+                strokeThickness: 2,
+                fontFamily: 'Arial'
+            }
+        );
+        medalTitle.setScrollFactor(0);
+        medalTitle.setDepth(100);
+        this.medalDisplayElements.push(medalTitle);
+        
+        // Create medal display area
+        const medalContainer = this.add.container(50, GameConfig.GAME.HEIGHT - 120);
+        medalContainer.setScrollFactor(0);
+        medalContainer.setDepth(100);
+        this.medalDisplayElements.push(medalContainer);
+        
+        // Map scene keys to medal image keys
+        const medalImageMap = {
+            'BernarScene': 'medal_docker',
+            'AsselyaScene': 'medal_insta',
+            'DianaScene': 'medal_coin',
+            'AbayScene': 'medal_heart'
+        };
+        
+        // Display earned medals
+        earnedMedals.forEach((medal, index) => {
+            const medalImageKey = medalImageMap[medal.sceneKey];
+            if (medalImageKey) {
+                // Create medal image
+                const medalImage = this.add.image(index * 60, 0, medalImageKey);
+                medalImage.setScale(0.4); // Scale down the medal
+                medalImage.setScrollFactor(0);
+                medalImage.setDepth(101);
+                medalImage.setInteractive();
+                
+                // Add glow effect for earned medals
+                medalImage.setTint(0xffffff);
+                
+                // Add hover effect to show medal info
+                medalImage.on('pointerover', () => {
+                    medalImage.setScale(0.5);
+                    this.showMedalTooltip(medal, medalImage.x + 50, medalImage.y + GameConfig.GAME.HEIGHT - 120);
+                });
+                
+                medalImage.on('pointerout', () => {
+                    medalImage.setScale(0.4);
+                    this.hideMedalTooltip();
+                });
+                
+                medalContainer.add(medalImage);
+            }
+        });
+        
+        // Show placeholder slots for unearned medals
+        const allMentors = ['BernarScene', 'AsselyaScene', 'DianaScene', 'AbayScene'];
+        const earnedScenes = earnedMedals.map(medal => medal.sceneKey);
+        
+        allMentors.forEach((sceneKey, index) => {
+            if (!earnedScenes.includes(sceneKey)) {
+                const medalImageKey = medalImageMap[sceneKey];
+                if (medalImageKey) {
+                    // Create grayed out placeholder
+                    const placeholderMedal = this.add.image(index * 60, 0, medalImageKey);
+                    placeholderMedal.setScale(0.4);
+                    placeholderMedal.setScrollFactor(0);
+                    placeholderMedal.setDepth(101);
+                    placeholderMedal.setTint(0x666666); // Gray tint for unearned
+                    placeholderMedal.setAlpha(0.5); // Semi-transparent
+                    
+                    medalContainer.add(placeholderMedal);
+                }
+            }
+        });
+    }
+    
+    /**
+     * Clean up medal display elements
+     */
+    cleanupMedalDisplay() {
+        if (this.medalDisplayElements) {
+            this.medalDisplayElements.forEach(element => {
+                if (element && element.destroy) {
+                    element.destroy();
+                }
+            });
+            this.medalDisplayElements = [];
+        }
+        this.hideMedalTooltip();
+    }
+    
+    /**
+     * Refresh medal display (useful when achievements are updated)
+     */
+    refreshMedalDisplay() {
+        this.createMedalDisplay();
+    }
+    
+    /**
+     * Show medal tooltip with information
+     */
+    showMedalTooltip(medal, x, y) {
+        // Remove existing tooltip
+        this.hideMedalTooltip();
+        
+        // Create tooltip background
+        this.medalTooltip = this.add.rectangle(x, y - 50, 200, 60, 0x000000, 0.9);
+        this.medalTooltip.setScrollFactor(0);
+        this.medalTooltip.setDepth(200);
+        
+        // Create tooltip text
+        this.medalTooltipText = this.add.text(x, y - 50, `${medal.name}\n${medal.description}`, {
+            fontSize: '12px',
+            fill: '#ffffff',
+            fontFamily: 'Arial',
+            align: 'center',
+            wordWrap: { width: 180 }
+        });
+        this.medalTooltipText.setOrigin(0.5);
+        this.medalTooltipText.setScrollFactor(0);
+        this.medalTooltipText.setDepth(201);
+    }
+    
+    /**
+     * Hide medal tooltip
+     */
+    hideMedalTooltip() {
+        if (this.medalTooltip) {
+            this.medalTooltip.destroy();
+            this.medalTooltip = null;
+        }
+        if (this.medalTooltipText) {
+            this.medalTooltipText.destroy();
+            this.medalTooltipText = null;
+        }
+    }
+
     /**
      * Start the intro sequence
      */
@@ -763,87 +972,130 @@ class BahreddinsHomeScene extends Phaser.Scene {
     cleanupChoiceSystem(overlay, questionText, choice1Button, choice2Button) {
         console.log('🧹 Cleaning up choice system...');
         
-        // Clean up any active dialogue first
-        this.cleanupActiveDialogue();
-        
-        // Remove keyboard listeners
-        if (this.choiceKeyHandler) {
-            this.input.keyboard.off('keydown', this.choiceKeyHandler);
-            this.choiceKeyHandler = null;
-        }
-        
-        if (this.mentorChoiceKeyHandler) {
-            this.input.keyboard.off('keydown', this.mentorChoiceKeyHandler);
-            this.mentorChoiceKeyHandler = null;
-        }
-        
-        // Disable interactions immediately to prevent double-clicks
-        if (choice1Button && choice1Button.removeInteractive) {
-            choice1Button.removeInteractive();
-        }
-        if (choice2Button && choice2Button.removeInteractive) {
-            choice2Button.removeInteractive();
-        }
-        
-        // Clean up passed elements (for backward compatibility)
-        if (overlay && overlay.destroy) {
-            overlay.destroy();
-        }
-        if (questionText && questionText.destroy) {
-            questionText.destroy();
-        }
-        if (choice1Button && choice1Button.destroy) {
-            choice1Button.destroy();
-        }
-        if (choice2Button && choice2Button.destroy) {
-            choice2Button.destroy();
-        }
-        
-        // Clean up choice containers
-        if (this.choiceContainer) {
-            this.choiceContainer.destroy();
-            this.choiceContainer = null;
-        }
-        
-        if (this.mentorChoiceContainer) {
-            this.mentorChoiceContainer.destroy();
-            this.mentorChoiceContainer = null;
-        }
-        
-        // Clean up individual choice elements
-        if (this.choiceButtons) {
-            this.choiceButtons.forEach(button => {
-                if (button && button.destroy) {
-                    if (button.removeInteractive) {
-                        button.removeInteractive();
+        try {
+            // Clean up any active dialogue first
+            this.cleanupActiveDialogue();
+            
+            // Remove keyboard listeners safely
+            if (this.choiceKeyHandler) {
+                try {
+                    this.input.keyboard.off('keydown', this.choiceKeyHandler);
+                } catch (error) {
+                    console.warn('⚠️ Error removing choice key handler:', error);
+                }
+                this.choiceKeyHandler = null;
+            }
+            
+            if (this.mentorChoiceKeyHandler) {
+                try {
+                    this.input.keyboard.off('keydown', this.mentorChoiceKeyHandler);
+                } catch (error) {
+                    console.warn('⚠️ Error removing mentor choice key handler:', error);
+                }
+                this.mentorChoiceKeyHandler = null;
+            }
+            
+            // Disable interactions immediately to prevent double-clicks
+            if (choice1Button && choice1Button.removeInteractive) {
+                try {
+                    choice1Button.removeInteractive();
+                } catch (error) {
+                    console.warn('⚠️ Error removing choice1Button interaction:', error);
+                }
+            }
+            if (choice2Button && choice2Button.removeInteractive) {
+                try {
+                    choice2Button.removeInteractive();
+                } catch (error) {
+                    console.warn('⚠️ Error removing choice2Button interaction:', error);
+                }
+            }
+            
+            // Clean up passed elements (for backward compatibility)
+            const elementsToDestroy = [overlay, questionText, choice1Button, choice2Button];
+            elementsToDestroy.forEach((element, index) => {
+                if (element && element.destroy && typeof element.destroy === 'function') {
+                    try {
+                        element.destroy();
+                    } catch (error) {
+                        console.warn(`⚠️ Error destroying element ${index}:`, error);
                     }
-                    button.destroy();
                 }
             });
-            this.choiceButtons = [];
-        }
-        
-        if (this.mentorChoiceButtons) {
-            this.mentorChoiceButtons.forEach(button => {
-                if (button && button.destroy) {
-                    if (button.removeInteractive) {
-                        button.removeInteractive();
-                    }
-                    button.destroy();
+            
+            // Clean up choice containers
+            if (this.choiceContainer && this.choiceContainer.destroy) {
+                try {
+                    this.choiceContainer.destroy();
+                } catch (error) {
+                    console.warn('⚠️ Error destroying choice container:', error);
                 }
-            });
-            this.mentorChoiceButtons = [];
-        }
-        
-        // Clean up choice overlays
-        if (this.choiceOverlay) {
-            this.choiceOverlay.destroy();
-            this.choiceOverlay = null;
-        }
-        
-        if (this.mentorChoiceOverlay) {
-            this.mentorChoiceOverlay.destroy();
-            this.mentorChoiceOverlay = null;
+                this.choiceContainer = null;
+            }
+            
+            if (this.mentorChoiceContainer && this.mentorChoiceContainer.destroy) {
+                try {
+                    this.mentorChoiceContainer.destroy();
+                } catch (error) {
+                    console.warn('⚠️ Error destroying mentor choice container:', error);
+                }
+                this.mentorChoiceContainer = null;
+            }
+            
+            // Clean up individual choice elements
+            if (this.choiceButtons && Array.isArray(this.choiceButtons)) {
+                this.choiceButtons.forEach((button, index) => {
+                    if (button && button.destroy && typeof button.destroy === 'function') {
+                        try {
+                            if (button.removeInteractive) {
+                                button.removeInteractive();
+                            }
+                            button.destroy();
+                        } catch (error) {
+                            console.warn(`⚠️ Error destroying choice button ${index}:`, error);
+                        }
+                    }
+                });
+                this.choiceButtons = [];
+            }
+            
+            if (this.mentorChoiceButtons && Array.isArray(this.mentorChoiceButtons)) {
+                this.mentorChoiceButtons.forEach((button, index) => {
+                    if (button && button.destroy && typeof button.destroy === 'function') {
+                        try {
+                            if (button.removeInteractive) {
+                                button.removeInteractive();
+                            }
+                            button.destroy();
+                        } catch (error) {
+                            console.warn(`⚠️ Error destroying mentor choice button ${index}:`, error);
+                        }
+                    }
+                });
+                this.mentorChoiceButtons = [];
+            }
+            
+            // Clean up choice overlays
+            if (this.choiceOverlay && this.choiceOverlay.destroy) {
+                try {
+                    this.choiceOverlay.destroy();
+                } catch (error) {
+                    console.warn('⚠️ Error destroying choice overlay:', error);
+                }
+                this.choiceOverlay = null;
+            }
+            
+            if (this.mentorChoiceOverlay && this.mentorChoiceOverlay.destroy) {
+                try {
+                    this.mentorChoiceOverlay.destroy();
+                } catch (error) {
+                    console.warn('⚠️ Error destroying mentor choice overlay:', error);
+                }
+                this.mentorChoiceOverlay = null;
+            }
+            
+        } catch (error) {
+            console.error('❌ Error during choice system cleanup:', error);
         }
         
         console.log('✅ Choice system cleanup complete');
@@ -1353,6 +1605,18 @@ class BahreddinsHomeScene extends Phaser.Scene {
             return;
         }
         
+        // Check if this is Abay - navigate to Abay scene
+        if (reality.NAME === 'Abay') {
+            console.log('🏁 Navigating to Abay Scene...');
+            
+            // Save game state before transition
+            const gameStateManager = new GameStateManager();
+            gameStateManager.setCurrentScene('AbayScene');
+            
+            this.scene.start('AbayScene');
+            return;
+        }
+        
         // Hide any existing description
         this.hideRealityDescription();
         
@@ -1496,11 +1760,143 @@ class BahreddinsHomeScene extends Phaser.Scene {
     }
     
     /**
+     * Check if all mentor achievements are unlocked and show Armansu message
+     */
+    checkForArmansusMessage() {
+        const achievementManager = new AchievementManager();
+        
+        // Check if all mentor achievements are unlocked
+        if (achievementManager.hasAllMentorAchievements()) {
+            console.log('🏆 All mentor achievements unlocked! Showing Armansu message...');
+            this.showArmansusMessage();
+        }
+    }
+    
+    /**
+     * Show Armansu waiting message
+     */
+    showArmansusMessage() {
+        // Create overlay
+        const overlay = this.add.rectangle(
+            GameConfig.GAME.WIDTH / 2,
+            GameConfig.GAME.HEIGHT / 2,
+            GameConfig.GAME.WIDTH,
+            GameConfig.GAME.HEIGHT,
+            0x000000,
+            0.8
+        );
+        overlay.setScrollFactor(0);
+        overlay.setDepth(300);
+        
+        // Create message container
+        const messageContainer = this.add.container(
+            GameConfig.GAME.WIDTH / 2,
+            GameConfig.GAME.HEIGHT / 2
+        );
+        messageContainer.setScrollFactor(0);
+        messageContainer.setDepth(301);
+        
+        // Create background for message
+        const messageBg = this.add.rectangle(0, 0, 600, 300, 0x2c3e50, 0.95);
+        messageBg.setStrokeStyle(4, 0xf39c12);
+        
+        // Create title
+        const title = this.add.text(0, -80, '🌟 CONGRATULATIONS! 🌟', {
+            fontSize: '28px',
+            fill: '#f39c12',
+            fontFamily: 'Arial',
+            align: 'center',
+            fontStyle: 'bold'
+        });
+        title.setOrigin(0.5);
+        
+        // Create main message
+        const message = this.add.text(0, -20, 
+            'You have collected all mentor medals!\n\n' +
+            '🐳 Docker Medal (Bernar\'s Courage)\n' +
+            '📷 Instagram Medal (Asselya\'s Grace)\n' +
+            '🪙 Coin Medal (Diana\'s Wisdom)\n' +
+            '❤️ Heart Medal (Abay\'s Speed)\n\n' +
+            '✨ Armansu is now waiting for you! ✨', {
+            fontSize: '18px',
+            fill: '#ecf0f1',
+            fontFamily: 'Arial',
+            align: 'center',
+            lineSpacing: 8
+        });
+        message.setOrigin(0.5);
+        
+        // Create close button
+        const closeButton = this.add.rectangle(0, 100, 150, 40, 0x27ae60);
+        closeButton.setStrokeStyle(2, 0x2ecc71);
+        closeButton.setInteractive({ useHandCursor: true });
+        
+        const closeButtonText = this.add.text(0, 100, 'Continue', {
+            fontSize: '18px',
+            fill: '#ffffff',
+            fontFamily: 'Arial',
+            fontStyle: 'bold'
+        });
+        closeButtonText.setOrigin(0.5);
+        
+        // Add elements to container
+        messageContainer.add([messageBg, title, message, closeButton, closeButtonText]);
+        
+        // Add click handler for close button
+        closeButton.on('pointerdown', () => {
+            // Fade out and destroy
+            this.tweens.add({
+                targets: [overlay, messageContainer],
+                alpha: 0,
+                duration: 500,
+                ease: 'Power2',
+                onComplete: () => {
+                    overlay.destroy();
+                    messageContainer.destroy();
+                }
+            });
+        });
+        
+        // Add hover effects for close button
+        closeButton.on('pointerover', () => {
+            closeButton.setFillStyle(0x2ecc71);
+            closeButtonText.setScale(1.1);
+        });
+        
+        closeButton.on('pointerout', () => {
+            closeButton.setFillStyle(0x27ae60);
+            closeButtonText.setScale(1.0);
+        });
+        
+        // Animate appearance
+        overlay.setAlpha(0);
+        messageContainer.setAlpha(0);
+        messageContainer.setScale(0.5);
+        
+        this.tweens.add({
+            targets: overlay,
+            alpha: 0.8,
+            duration: 500,
+            ease: 'Power2'
+        });
+        
+        this.tweens.add({
+            targets: messageContainer,
+            alpha: 1,
+            scaleX: 1,
+            scaleY: 1,
+            duration: 600,
+            ease: 'Back.easeOut',
+            delay: 200
+        });
+    }
+    
+    /**
      * Update loop
      */
     update() {
-        // Update player movement only if intro is not active
-        if (this.player && this.inputManager && !this.isIntroActive) {
+        // Update player movement only if intro is not active and direction map is not active
+        if (this.player && this.inputManager && !this.isIntroActive && !this.isDirectionMapActive) {
             this.player.update(this.inputManager);
         }
     }
@@ -1519,8 +1915,16 @@ class BahreddinsHomeScene extends Phaser.Scene {
             this.cleanupDirectionMap();
         }
         
+        // Clean up medal display
+        this.cleanupMedalDisplay();
+        
+        // Clean up any remaining tooltips
+        this.hideMedalTooltip();
+        
         // Reset flags
         this.isIntroActive = false;
         this.hasIntroStarted = false;
+        
+        console.log('✅ Bahreddin\'s Home Scene cleanup complete');
     }
 }

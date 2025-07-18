@@ -312,6 +312,18 @@ class TeleportCave {
             return;
         }
         
+        // Check if this is Abay - navigate to Abay scene
+        if (reality.NAME === 'Abay') {
+            console.log('🏁 Navigating to Abay Scene...');
+            
+            // Save game state before transition
+            const gameStateManager = new GameStateManager();
+            gameStateManager.setCurrentScene('AbayScene');
+            
+            this.scene.scene.start('AbayScene');
+            return;
+        }
+        
         console.log('📝 Showing description for:', reality.NAME);
         
         // Remove existing description if any

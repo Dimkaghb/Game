@@ -17,7 +17,7 @@ class Game {
                     debug: false // Set to true for physics debugging
                 }
             },
-            scene: [MainMenuScene, GameScene, BahreddinsHomeScene, DianaScene, AsselyaScene, BernarScene],
+            scene: [MainMenuScene, GameScene, BahreddinsHomeScene, DianaScene, AsselyaScene, BernarScene, AbayScene],
             scale: {
                 mode: Phaser.Scale.FIT,
                 autoCenter: Phaser.Scale.CENTER_BOTH
@@ -48,12 +48,26 @@ class Game {
      */
     setupErrorHandling() {
         window.addEventListener('error', (event) => {
-            console.error('🚨 Game Error:', event.error);
+            // Only log actual errors, not null values
+            if (event.error && event.error !== null) {
+                console.error('🚨 Game Error:', event.error);
+            }
         });
+
+        // Handle Phaser specific errors with better error checking
+        if (this.game && this.game.events) {
+            this.game.events.on('error', (error) => {
+                if (error && error !== null) {
+                    console.error('🚨 Phaser Error:', error);
+                }
+            });
+        }
         
-        // Handle Phaser specific errors
-        this.game.events.on('error', (error) => {
-            console.error('🚨 Phaser Error:', error);
+        // Handle unhandled promise rejections
+        window.addEventListener('unhandledrejection', (event) => {
+            if (event.reason && event.reason !== null) {
+                console.error('🚨 Unhandled Promise Rejection:', event.reason);
+            }
         });
     }
     

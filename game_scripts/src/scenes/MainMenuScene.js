@@ -11,6 +11,10 @@ class MainMenuScene extends Phaser.Scene {
         this.continueButton = null;
         this.newGameButton = null;
         this.lastSaveText = null;
+        
+        // Input handlers
+        this.escKeyHandler = null;
+        this.enterKeyHandler = null;
     }
 
     /**
@@ -219,19 +223,24 @@ class MainMenuScene extends Phaser.Scene {
      * Setup keyboard controls
      */
     setupKeyboardControls() {
-        // ESC to quit (if needed)
-        this.input.keyboard.on('keydown-ESC', () => {
+        // Create named handlers for proper cleanup
+        this.escKeyHandler = () => {
             console.log('ESC pressed in main menu');
-        });
+        };
         
-        // Enter to continue/start
-        this.input.keyboard.on('keydown-ENTER', () => {
+        this.enterKeyHandler = () => {
             if (this.gameStateManager.hasSavedGame()) {
                 this.continueGame();
             } else {
                 this.startNewGame();
             }
-        });
+        };
+        
+        // ESC to quit (if needed)
+        this.input.keyboard.on('keydown-ESC', this.escKeyHandler);
+        
+        // Enter to continue/start
+        this.input.keyboard.on('keydown-ENTER', this.enterKeyHandler);
     }
 
     /**
@@ -352,5 +361,25 @@ class MainMenuScene extends Phaser.Scene {
             // Start from the beginning
             this.scene.start('GameScene');
         });
+    }
+    
+    /**
+     * Clean up scene resources
+     */
+    shutdown() {
+        console.log('🧹 Shutting down Main Menu Scene...');
+        
+        // Clean up keyboard event listeners
+        if (this.escKeyHandler) {
+            this.input.keyboard.off('keydown-ESC', this.escKeyHandler);
+            this.escKeyHandler = null;
+        }
+        
+        if (this.enterKeyHandler) {
+            this.input.keyboard.off('keydown-ENTER', this.enterKeyHandler);
+            this.enterKeyHandler = null;
+        }
+        
+        console.log('✅ Main Menu Scene shutdown complete');
     }
 }

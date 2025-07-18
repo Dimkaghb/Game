@@ -1014,6 +1014,11 @@ class BahreddinsHomeScene extends Phaser.Scene {
      */
     returnToMainScene() {
         console.log('🔄 Returning to main scene...');
+        
+        // Save game state before transition
+        const gameStateManager = new GameStateManager();
+        gameStateManager.setCurrentScene('GameScene');
+        
         this.scene.start('GameScene');
     }
     
@@ -1235,6 +1240,18 @@ class BahreddinsHomeScene extends Phaser.Scene {
         if (reality.NAME === 'Bahreddin Home') {
             console.log('✅ Already in Bahreddin Home, closing direction map...');
             this.closeDirectionMap();
+            return;
+        }
+        
+        // Check if this is Diana - navigate to Diana scene
+        if (reality.NAME === 'Diana') {
+            console.log('🎭 Navigating to Diana Scene...');
+            
+            // Save game state before transition
+            const gameStateManager = new GameStateManager();
+            gameStateManager.setCurrentScene('DianaScene');
+            
+            this.scene.start('DianaScene');
             return;
         }
         

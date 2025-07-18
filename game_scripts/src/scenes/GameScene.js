@@ -31,6 +31,10 @@ class GameScene extends Phaser.Scene {
         // Record game start time
         this.gameStartTime = this.time.now;
         
+        // Save game state when entering main game
+        const gameStateManager = new GameStateManager();
+        gameStateManager.setCurrentScene('GameScene');
+        
         // Create background
         this.background = this.assetManager.createBackground();
         

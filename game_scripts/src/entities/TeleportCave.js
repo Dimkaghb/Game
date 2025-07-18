@@ -276,6 +276,18 @@ class TeleportCave {
             return;
         }
         
+        // Check if this is Diana - navigate to Diana scene
+        if (reality.NAME === 'Diana') {
+            console.log('🎭 Navigating to Diana Scene...');
+            
+            // Save game state before transition
+            const gameStateManager = new GameStateManager();
+            gameStateManager.setCurrentScene('DianaScene');
+            
+            this.scene.scene.start('DianaScene');
+            return;
+        }
+        
         console.log('📝 Showing description for:', reality.NAME);
         
         // Remove existing description if any
@@ -365,6 +377,10 @@ class TeleportCave {
                             
                             // Clean up current scene elements
                             this.cleanup();
+                            
+                            // Save game state before transition
+                            const gameStateManager = new GameStateManager();
+                            gameStateManager.setCurrentScene('BahreddinsHomeScene');
                             
                             // Start the new scene
                             console.log('🎬 Starting BahreddinsHomeScene...');

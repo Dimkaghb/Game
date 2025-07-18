@@ -168,6 +168,7 @@ class MainMenuScene extends Phaser.Scene {
         // Create button background
         const buttonBg = this.add.rectangle(x, y, 200, 50, 0x333333);
         buttonBg.setStrokeStyle(2, color);
+        buttonBg.setInteractive({ useHandCursor: true });
         
         // Create button text
         const buttonText = this.add.text(x, y, text, {
@@ -181,13 +182,12 @@ class MainMenuScene extends Phaser.Scene {
         // Create button container
         const button = this.add.container(0, 0, [buttonBg, buttonText]);
         button.setSize(200, 50);
-        button.setInteractive({ useHandCursor: true });
         
-        // Add hover effects
-        button.on('pointerover', () => {
+        // Make the background handle all interactions
+        buttonBg.on('pointerover', () => {
             buttonBg.setFillStyle(Phaser.Display.Color.HexStringToColor(color).color, 0.2);
             this.tweens.add({
-                targets: button,
+                targets: [buttonBg, buttonText],
                 scaleX: 1.05,
                 scaleY: 1.05,
                 duration: 150,
@@ -195,10 +195,10 @@ class MainMenuScene extends Phaser.Scene {
             });
         });
         
-        button.on('pointerout', () => {
+        buttonBg.on('pointerout', () => {
             buttonBg.setFillStyle(0x333333);
             this.tweens.add({
-                targets: button,
+                targets: [buttonBg, buttonText],
                 scaleX: 1,
                 scaleY: 1,
                 duration: 150,
@@ -206,8 +206,11 @@ class MainMenuScene extends Phaser.Scene {
             });
         });
         
-        // Add click handler
-        button.on('pointerdown', callback);
+        // Add click handler to background
+        buttonBg.on('pointerdown', () => {
+            console.log(`🖱️ Button clicked: ${text}`);
+            callback();
+        });
         
         return button;
     }

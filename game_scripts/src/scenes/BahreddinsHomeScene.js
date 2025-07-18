@@ -487,7 +487,7 @@ class BahreddinsHomeScene extends Phaser.Scene {
             GameConfig.GAME.WIDTH / 2,
             GameConfig.GAME.HEIGHT / 2,
             GameConfig.GAME.WIDTH - 100,
-            300,
+            350, // Increased height to prevent overflow
             0x000000,
             0.9
         );
@@ -497,20 +497,34 @@ class BahreddinsHomeScene extends Phaser.Scene {
         // Create question text
         const questionText = this.add.text(
             GameConfig.GAME.WIDTH / 2,
-            GameConfig.GAME.HEIGHT / 2 - 80,
+            GameConfig.GAME.HEIGHT / 2 - 100,
             'What would you like to know?',
-            GameConfig.CHOICE_SYSTEM.QUESTION_STYLE
+            {
+                fontSize: '20px',
+                fontFamily: 'Arial',
+                fill: '#ffffff',
+                align: 'center',
+                wordWrap: { width: GameConfig.GAME.WIDTH - 150 }
+            }
         );
         questionText.setOrigin(0.5);
         questionText.setScrollFactor(0);
         questionText.setDepth(201);
         
-        // Create choice buttons
+        // Create choice buttons with better positioning
         const choice1Button = this.add.text(
             GameConfig.GAME.WIDTH / 2,
-            GameConfig.GAME.HEIGHT / 2 - 20,
+            GameConfig.GAME.HEIGHT / 2 - 40,
             GameConfig.CHOICE_SYSTEM.MENTOR_CHOICES.BERNAR_MCDONALDS.TEXT,
-            GameConfig.CHOICE_SYSTEM.CHOICE_BUTTON_STYLE
+            {
+                fontSize: '16px',
+                fontFamily: 'Arial',
+                fill: '#ffffff',
+                backgroundColor: '#4ecdc4',
+                padding: { x: 15, y: 10 },
+                align: 'center',
+                wordWrap: { width: GameConfig.GAME.WIDTH - 200 }
+            }
         );
         choice1Button.setOrigin(0.5);
         choice1Button.setScrollFactor(0);
@@ -519,14 +533,26 @@ class BahreddinsHomeScene extends Phaser.Scene {
         
         const choice2Button = this.add.text(
             GameConfig.GAME.WIDTH / 2,
-            GameConfig.GAME.HEIGHT / 2 + 40,
+            GameConfig.GAME.HEIGHT / 2 + 20,
             GameConfig.CHOICE_SYSTEM.MENTOR_CHOICES.WHAT_TO_DO.TEXT,
-            GameConfig.CHOICE_SYSTEM.CHOICE_BUTTON_STYLE
+            {
+                fontSize: '16px',
+                fontFamily: 'Arial',
+                fill: '#ffffff',
+                backgroundColor: '#4ecdc4',
+                padding: { x: 15, y: 10 },
+                align: 'center',
+                wordWrap: { width: GameConfig.GAME.WIDTH - 200 }
+            }
         );
         choice2Button.setOrigin(0.5);
         choice2Button.setScrollFactor(0);
         choice2Button.setDepth(201);
         choice2Button.setInteractive({ useHandCursor: true });
+        
+        // Store references for cleanup
+        this.mentorChoiceOverlay = overlay;
+        this.mentorChoiceButtons = [choice1Button, choice2Button];
         
         // Add hover effects
         this.addChoiceButtonHoverEffects(choice1Button);
@@ -567,7 +593,7 @@ class BahreddinsHomeScene extends Phaser.Scene {
             GameConfig.GAME.WIDTH / 2,
             GameConfig.GAME.HEIGHT / 2,
             GameConfig.GAME.WIDTH - 100,
-            300,
+            350, // Increased height to prevent overflow
             0x000000,
             0.9
         );
@@ -577,20 +603,34 @@ class BahreddinsHomeScene extends Phaser.Scene {
         // Create question text
         const questionText = this.add.text(
             GameConfig.GAME.WIDTH / 2,
-            GameConfig.GAME.HEIGHT / 2 - 80,
+            GameConfig.GAME.HEIGHT / 2 - 100,
             GameConfig.CHOICE_SYSTEM.QUESTION_TEXT,
-            GameConfig.CHOICE_SYSTEM.QUESTION_STYLE
+            {
+                fontSize: '20px',
+                fontFamily: 'Arial',
+                fill: '#ffffff',
+                align: 'center',
+                wordWrap: { width: GameConfig.GAME.WIDTH - 150 }
+            }
         );
         questionText.setOrigin(0.5);
         questionText.setScrollFactor(0);
         questionText.setDepth(201);
         
-        // Create choice buttons
+        // Create choice buttons with better positioning
         const choice1Button = this.add.text(
             GameConfig.GAME.WIDTH / 2,
-            GameConfig.GAME.HEIGHT / 2 - 20,
+            GameConfig.GAME.HEIGHT / 2 - 40,
             GameConfig.CHOICE_SYSTEM.CHOICES.ASK_BAHREDDIN.TEXT,
-            GameConfig.CHOICE_SYSTEM.CHOICE_BUTTON_STYLE
+            {
+                fontSize: '16px',
+                fontFamily: 'Arial',
+                fill: '#ffffff',
+                backgroundColor: '#4ecdc4',
+                padding: { x: 15, y: 10 },
+                align: 'center',
+                wordWrap: { width: GameConfig.GAME.WIDTH - 200 }
+            }
         );
         choice1Button.setOrigin(0.5);
         choice1Button.setScrollFactor(0);
@@ -599,14 +639,26 @@ class BahreddinsHomeScene extends Phaser.Scene {
         
         const choice2Button = this.add.text(
             GameConfig.GAME.WIDTH / 2,
-            GameConfig.GAME.HEIGHT / 2 + 40,
+            GameConfig.GAME.HEIGHT / 2 + 20,
             GameConfig.CHOICE_SYSTEM.CHOICES.HIT_BAHREDDIN.TEXT,
-            GameConfig.CHOICE_SYSTEM.CHOICE_BUTTON_STYLE
+            {
+                fontSize: '16px',
+                fontFamily: 'Arial',
+                fill: '#ffffff',
+                backgroundColor: '#4ecdc4',
+                padding: { x: 15, y: 10 },
+                align: 'center',
+                wordWrap: { width: GameConfig.GAME.WIDTH - 200 }
+            }
         );
         choice2Button.setOrigin(0.5);
         choice2Button.setScrollFactor(0);
         choice2Button.setDepth(201);
         choice2Button.setInteractive({ useHandCursor: true });
+        
+        // Store references for cleanup
+        this.choiceOverlay = overlay;
+        this.choiceButtons = [choice1Button, choice2Button];
         
         // Add hover effects
         this.addChoiceButtonHoverEffects(choice1Button);
@@ -725,11 +777,27 @@ class BahreddinsHomeScene extends Phaser.Scene {
             this.mentorChoiceKeyHandler = null;
         }
         
+        // Disable interactions immediately to prevent double-clicks
+        if (choice1Button && choice1Button.removeInteractive) {
+            choice1Button.removeInteractive();
+        }
+        if (choice2Button && choice2Button.removeInteractive) {
+            choice2Button.removeInteractive();
+        }
+        
         // Clean up passed elements (for backward compatibility)
-        if (overlay && overlay.destroy) overlay.destroy();
-        if (questionText && questionText.destroy) questionText.destroy();
-        if (choice1Button && choice1Button.destroy) choice1Button.destroy();
-        if (choice2Button && choice2Button.destroy) choice2Button.destroy();
+        if (overlay && overlay.destroy) {
+            overlay.destroy();
+        }
+        if (questionText && questionText.destroy) {
+            questionText.destroy();
+        }
+        if (choice1Button && choice1Button.destroy) {
+            choice1Button.destroy();
+        }
+        if (choice2Button && choice2Button.destroy) {
+            choice2Button.destroy();
+        }
         
         // Clean up choice containers
         if (this.choiceContainer) {
@@ -746,6 +814,9 @@ class BahreddinsHomeScene extends Phaser.Scene {
         if (this.choiceButtons) {
             this.choiceButtons.forEach(button => {
                 if (button && button.destroy) {
+                    if (button.removeInteractive) {
+                        button.removeInteractive();
+                    }
                     button.destroy();
                 }
             });
@@ -755,6 +826,9 @@ class BahreddinsHomeScene extends Phaser.Scene {
         if (this.mentorChoiceButtons) {
             this.mentorChoiceButtons.forEach(button => {
                 if (button && button.destroy) {
+                    if (button.removeInteractive) {
+                        button.removeInteractive();
+                    }
                     button.destroy();
                 }
             });
@@ -1252,6 +1326,18 @@ class BahreddinsHomeScene extends Phaser.Scene {
             gameStateManager.setCurrentScene('DianaScene');
             
             this.scene.start('DianaScene');
+            return;
+        }
+        
+        // Check if this is Asselya - navigate to Asselya scene
+        if (reality.NAME === 'Asselya') {
+            console.log('📱 Navigating to Asselya Scene...');
+            
+            // Save game state before transition
+            const gameStateManager = new GameStateManager();
+            gameStateManager.setCurrentScene('AsselyaScene');
+            
+            this.scene.start('AsselyaScene');
             return;
         }
         

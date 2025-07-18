@@ -318,6 +318,12 @@ class GameConfig {
                 POWER: 'Attendance Violence',
                 PERSONALITY: 'Deceptively beautiful but dangerous'
             },
+            ASSELYA: {
+                NAME: 'Asselya',
+                DESCRIPTION: 'Pretty woman, kind at first view but can kick any time from nFactorial Incubator',
+                POWER: 'Unexpected strikes',
+                PERSONALITY: 'Deceptively kind but ready to strike'
+            },
             ABAY: {
                 NAME: 'Abay',
                 DESCRIPTION: 'Tall and quiet, Bahreddin was his best friend a long ago before Abay betrayed him',
@@ -331,8 +337,9 @@ class GameConfig {
                 PERSONALITY: 'Legendary warrior with container mastery'
             },
             TUTORIAL_TEXT: [
-                'Listen carefully, Dimash. Armansu is secured by three powerful mentors...',
+                'Listen carefully, Dimash. Armansu is secured by four powerful mentors...',
                 'Diana: Pretty girl at first look, but she can make violence with the attendance. Don\'t be fooled by her appearance!',
+                'Asselya: Pretty woman, kind at first view but can kick any time from nFactorial Incubator.',
                 'Abay: Tall and quiet. He was my best friend long ago, before he betrayed me. He\'s very fast moving opponent because he writes in Golang.',
                 'Bernar: A legend warrior who once served 100 McDonalds for his soldiers in nFactorial Incubator. His main power is his aura and Docker.',
                 'These mentors guard the path to Arman\'s temple. You must be prepared for what lies ahead.'

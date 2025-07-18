@@ -288,6 +288,18 @@ class TeleportCave {
             return;
         }
         
+        // Check if this is Asselya - navigate to Asselya scene
+        if (reality.NAME === 'Asselya') {
+            console.log('👩‍💻 Navigating to Asselya Scene...');
+            
+            // Save game state before transition
+            const gameStateManager = new GameStateManager();
+            gameStateManager.setCurrentScene('AsselyaScene');
+            
+            this.scene.scene.start('AsselyaScene');
+            return;
+        }
+        
         console.log('📝 Showing description for:', reality.NAME);
         
         // Remove existing description if any

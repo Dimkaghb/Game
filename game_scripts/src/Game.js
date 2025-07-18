@@ -17,7 +17,7 @@ class Game {
                     debug: false // Set to true for physics debugging
                 }
             },
-            scene: [MainMenuScene, GameScene, BahreddinsHomeScene, DianaScene],
+            scene: [MainMenuScene, GameScene, BahreddinsHomeScene, DianaScene, AsselyaScene],
             scale: {
                 mode: Phaser.Scale.FIT,
                 autoCenter: Phaser.Scale.CENTER_BOTH

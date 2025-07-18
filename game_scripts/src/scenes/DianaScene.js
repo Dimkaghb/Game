@@ -819,13 +819,13 @@ class DianaScene extends Phaser.Scene {
     }
     
     showContinueButton() {
-        // Create continue button
+        // Create "Go to Bahreddin" button
         this.continueButton = this.add.rectangle(
             this.cameras.main.centerX,
             this.cameras.main.centerY + 100,
-            200,
+            250,
             60,
-            0x4ecdc4
+            0x4CAF50
         );
         this.continueButton.setScrollFactor(0);
         this.continueButton.setDepth(100);
@@ -834,9 +834,9 @@ class DianaScene extends Phaser.Scene {
         const continueButtonText = this.add.text(
             this.cameras.main.centerX,
             this.cameras.main.centerY + 100,
-            'CONTINUE',
+            'GO TO BAHREDDIN',
             {
-                fontSize: '24px',
+                fontSize: '18px',
                 fontFamily: 'Arial',
                 fill: '#ffffff',
                 fontStyle: 'bold'
@@ -852,12 +852,12 @@ class DianaScene extends Phaser.Scene {
         });
         
         this.continueButton.on('pointerover', () => {
-            this.continueButton.setFillStyle(0x6ee6de);
+            this.continueButton.setFillStyle(0x45a049);
             continueButtonText.setScale(1.1);
         });
         
         this.continueButton.on('pointerout', () => {
-            this.continueButton.setFillStyle(0x4ecdc4);
+            this.continueButton.setFillStyle(0x4CAF50);
             continueButtonText.setScale(1.0);
         });
     }
